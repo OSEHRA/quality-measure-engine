@@ -23,6 +23,7 @@ module QME
           map = QME::MapReduce::Executor.new(@quality_report.measure_id,@quality_report.sub_id, @options.merge('start_time' => Time.now.to_i))
           if !@quality_report.patients_cached?
             tick('Starting MapReduce')
+            @quality_report.destroy_patient_results
             map.map_records_into_measure_groups(@options['prefilter'])
             tick('MapReduce complete')
           end

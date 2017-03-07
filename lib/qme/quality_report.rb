@@ -120,14 +120,18 @@ module QME
     # Determines whether the patient mapping for the quality report has been
     # completed
     def patients_cached?
-      !QME::QualityReport.where({measure_id: self.measure_id,sub_id:self.sub_id, effective_date: self.effective_date, test_id: self.test_id, "status.state" => "completed" }).first.nil?
+      #!QME::QualityReport.where({measure_id: self.measure_id,sub_id:self.sub_id, effective_date: self.effective_date, test_id: self.test_id, "status.state" => "completed" }).first.nil?
+      providers = self.filters['providers'].map { |pv| BSON::ObjectId.from_string(pv) }
+      !QME::QualityReport.where({measure_id: self.measure_id,sub_id:self.sub_id, effective_date: self.effective_date, test_id: self.test_id, "status.state" => "completed", "filters.providers" => {'$in' => providers} }).first.nil?
     end
 
 
      # Determines whether the patient mapping for the quality report has been
     # queued up by another quality report or if it is currently running
     def calculation_queued_or_running?
-      !QME::QualityReport.where({measure_id: self.measure_id,sub_id:self.sub_id, effective_date: self.effective_date, test_id: self.test_id }).nin("status.state" =>["unknown","stagged"]).first.nil?
+      #!QME::QualityReport.where({measure_id: self.measure_id,sub_id:self.sub_id, effective_date: self.effective_date, test_id: self.test_id }).nin("status.state" =>["unknown","stagged"]).first.nil?
+      providers = self.filters['providers'].map { |pv| BSON::ObjectId.from_string(pv) }
+      !QME::QualityReport.where({measure_id: self.measure_id,sub_id:self.sub_id, effective_date: self.effective_date, test_id: self.test_id, "filters.providers" => {'$in' => providers} }).nin("status.state" =>["unknown","stagged"]).first.nil?
     end
 
     # Kicks off a background job to calculate the measure
@@ -164,6 +168,11 @@ module QME
     def patient_results
      ex = QME::MapReduce::Executor.new(self.measure_id,self.sub_id, self.attributes)
      QME::PatientCache.where(patient_cache_matcher)
+    end
+
+    def destroy_patient_results
+      ex = QME::MapReduce::Executor.new(self.measure_id,self.sub_id, self.attributes)
+      QME::PatientCache.destroy_all(patient_cache_matcher)
     end
 
     def measure
