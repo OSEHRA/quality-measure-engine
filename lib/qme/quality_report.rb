@@ -120,18 +120,24 @@ module QME
     # Determines whether the patient mapping for the quality report has been
     # completed
     def patients_cached?
-      #!QME::QualityReport.where({measure_id: self.measure_id,sub_id:self.sub_id, effective_date: self.effective_date, test_id: self.test_id, "status.state" => "completed" }).first.nil?
-      providers = self.filters['providers'].map { |pv| BSON::ObjectId.from_string(pv) }
-      !QME::QualityReport.where({measure_id: self.measure_id,sub_id:self.sub_id, effective_date: self.effective_date, test_id: self.test_id, "status.state" => "completed", "filters.providers" => {'$in' => providers} }).first.nil?
+      if self.filters['providers'] && self.filters['providers'].size > 0
+        providers = self.filters['providers'].map { |pv| BSON::ObjectId.from_string(pv) }
+        !QME::QualityReport.where({measure_id: self.measure_id,sub_id:self.sub_id, effective_date: self.effective_date, test_id: self.test_id, "status.state" => "completed", "filters.providers" => {'$in' => providers} }).first.nil?
+      else
+        !QME::QualityReport.where({measure_id: self.measure_id,sub_id:self.sub_id, effective_date: self.effective_date, test_id: self.test_id, "status.state" => "completed" }).first.nil?
+      end
     end
 
 
      # Determines whether the patient mapping for the quality report has been
     # queued up by another quality report or if it is currently running
     def calculation_queued_or_running?
-      #!QME::QualityReport.where({measure_id: self.measure_id,sub_id:self.sub_id, effective_date: self.effective_date, test_id: self.test_id }).nin("status.state" =>["unknown","stagged"]).first.nil?
-      providers = self.filters['providers'].map { |pv| BSON::ObjectId.from_string(pv) }
-      !QME::QualityReport.where({measure_id: self.measure_id,sub_id:self.sub_id, effective_date: self.effective_date, test_id: self.test_id, "filters.providers" => {'$in' => providers} }).nin("status.state" =>["unknown","stagged"]).first.nil?
+      if self.filters['providers'] && self.filters['providers'].size > 0
+        providers = self.filters['providers'].map { |pv| BSON::ObjectId.from_string(pv) }
+        !QME::QualityReport.where({measure_id: self.measure_id,sub_id:self.sub_id, effective_date: self.effective_date, test_id: self.test_id, "filters.providers" => {'$in' => providers} }).nin("status.state" =>["unknown","stagged"]).first.nil?
+      else
+        !QME::QualityReport.where({measure_id: self.measure_id,sub_id:self.sub_id, effective_date: self.effective_date, test_id: self.test_id }).nin("status.state" =>["unknown","stagged"]).first.nil?
+      end
     end
 
     # Kicks off a background job to calculate the measure
