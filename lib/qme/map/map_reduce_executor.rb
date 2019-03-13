@@ -103,7 +103,7 @@ module QME
             pipeline << group1
             pipeline << group2
 
-            aggregate = get_db.command(:aggregate => 'patient_cache', :pipeline => pipeline)
+            aggregate = get_db.command(:aggregate => 'patient_cache', :pipeline => pipeline, allowDiskUse:true)
             aggregate_document = aggregate.documents[0]
             v = {}
             (aggregate_document["result"] || []).each  do |entry|
@@ -138,7 +138,7 @@ module QME
           QME::QualityReport::CONSIDERED => {"$sum" => 1}
         }}
 
-        aggregate = get_db.command(:aggregate => 'patient_cache', :pipeline => pipeline)
+        aggregate = get_db.command(:aggregate => 'patient_cache', :pipeline => pipeline, allowDiskUse:true)
         aggregate_document = aggregate.documents[0]
         if !aggregate.successful?
           raise RuntimeError, "Aggregation Failed"
@@ -188,7 +188,7 @@ module QME
         cv_pipeline << {'$unwind' => '$value.values'}
         cv_pipeline << {'$group' => {'_id' => '$value.values', 'count' => {'$sum' => 1}}}
 
-        aggregate = get_db.command(:aggregate => 'patient_cache', :pipeline => cv_pipeline)
+        aggregate = get_db.command(:aggregate => 'patient_cache', :pipeline => cv_pipeline, allowDiskUse:true)
         aggregate_document = aggregate.documents[0]
 
         raise RuntimeError, "Aggregation Failed" if aggregate_document['ok'] != 1
